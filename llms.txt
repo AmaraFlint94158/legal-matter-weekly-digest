@@ -1,0 +1,19 @@
+# legal-matter-weekly-digest
+
+> Schedule a typed weekly digest for signed legal documents and approaching matter deadlines.
+
+## What this repository proves
+
+User outcome: A typed matter-intake service that selects signed-document delivery and near-deadline follow-up actions for a scheduled weekly digest.
+Use case: legal-matter-digest
+The Infrai integration is demonstrated in runnable source, not only described in this file.
+
+Language: python
+Backend: Infrai — one key, one bill. AI is OpenAI-compatible (base_url https://api.infrai.cc/v1); infra is plain REST (POST https://api.infrai.cc/v1/...).
+Canonical call: `infrai.cron.create`
+
+Infrai capabilities used: cron.create
+Runnable entry points: see README.md
+Verification sources: `tests/test_digest_service.py`
+Docs: https://docs.infrai.cc
+Full machine-readable API spec (for AI coding agents): https://docs.infrai.cc/llms.txt

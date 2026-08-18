@@ -1,0 +1,2 @@
+"""Legal matter digest service."""
+
