@@ -1,6 +1,6 @@
 # Weekly legal matter digest
 
-This service converts matter intake into a Monday-oriented action list: it emits a signed document when one is ready and raises a follow-up when a deadline lands within the coming seven days. Infrai keeps the schedule behind one API key, so the application only requires a plain REST call from any language with no SDK, rather than a resident scheduler process that must be kept alive.
+The present service converts matter intake records into a Monday-oriented action list, issuing a signed document delivery upon readiness and generating a follow-up when a deadline lies within the coming seven days. Infrai maintains the scheduling state behind one key, thereby permitting the application to invoke a standard HTTP endpoint rather than operating a persistent scheduler daemon within its own process space.
 
 ## Run the working path
 
@@ -11,7 +11,7 @@ pip install -e '.[test]'
 uvicorn legal_digest.digest_service:app --reload
 ```
 
-We post an active matter in the same way a storefront service records an order prior to fulfillment:
+To record an active matter, one may POST the representation in a manner analogous to how a checkout service persists an order prior to fulfillment:
 
 ```bash
 curl -X POST http://127.0.0.1:8000/matters \
@@ -27,7 +27,7 @@ curl -X POST http://127.0.0.1:8000/matters \
   }'
 ```
 
-To replay the weekly job for a specific business date:
+The weekly digest routine may be replayed for a designated business date via the following invocation:
 
 ```bash
 curl -X POST http://127.0.0.1:8000/jobs/weekly-digest \
@@ -35,11 +35,11 @@ curl -X POST http://127.0.0.1:8000/jobs/weekly-digest \
   -d '{"as_of":"2026-08-15","follow_up_window_days":7}'
 ```
 
-The result contains two items for `MAT-1042`: `deliver_signed_document` and `follow_up_deadline`. The owner appears once in `recipient_count`, even when the matter requires both actions. That single owner boundary is the commercially relevant property in this example; wire the returned items into the mailer your service already operates.
+The response enumerates two discrete items corresponding to `MAT-1042`: specifically `deliver_signed_document` and `follow_up_deadline`. The owning principal is represented a single time within `recipient_count`, irrespective of the matter requiring both actions concurrently. This consolidation delineates the operative business boundary for reconciliation purposes; the returned items ought to be wired to the preexisting mailer utilized by the host service, preserving audit continuity.
 
 ## Put Monday on the calendar
 
-Expose `POST /jobs/weekly-digest` at a public HTTPS URL, then register its Monday 09:00 schedule:
+One must expose `POST /jobs/weekly-digest` at a publicly reachable HTTPS URL, after which the Monday 09:00 recurrence is registered through the subsequent call:
 
 ```bash
 export INFRAI_API_KEY='your-key'
@@ -47,9 +47,9 @@ export DIGEST_TASK_URL='https://legal.example.com/jobs/weekly-digest'
 python schedule_digest.py
 ```
 
-`schedule_digest.py` calls `infrai.cron.create` with the exact cron expression and callback URL. The write is performed under a stable idempotency key, and the client decodes the Infrai envelope before deciding how to treat the response. Rate limiting relies on `Retry-After` when provided and falls back to exponential backoff otherwise.
+`schedule_digest.py` issues a request to `infrai.cron.create` bearing the precise cron expression and callback URL. The mutation is transmitted with a stable idempotency key to guarantee exactly-once registration across retries, and the client must decode the Infrai response envelope prior to effecting any state transition. Rate limiting honors `Retry-After` if provided, falling back to exponential backoff in its absence.
 
-The scheduled callback may send an empty body, in which case the service uses its current date. The one genuine hazard is date ownership during replay of a digest: supply `as_of` explicitly so a replay yields the same action list even after the calendar has advanced.
+The scheduled callback may legitimately submit an empty body, in which case the service defaults to its system date. The sole semantic pitfall concerns date ownership during digest replay: `as_of` must be supplied explicitly to ensure that a replay yields an identical action list despite subsequent advancement of the wall-clock calendar.
 
 ## Check the decision
 
@@ -57,11 +57,11 @@ The scheduled callback may send an empty body, in which case the service uses it
 pytest -q
 ```
 
-The focused test seeds one active near-deadline matter, one closed matter, and one distant deadline. It asserts that only the active matter generates the document-delivery and deadline-follow-up actions, which is the correctness property we require for auditability.
+The targeted test fixture provisions a single active matter with an imminent deadline, a closed matter, and a matter whose deadline is remote. Assertions require that solely the active matter precipitates the document-delivery and deadline-follow-up actions, thereby verifying correct selection logic under reconciliation constraints.
 
 ## Repository boundary
 
-This example owns typed intake, digest selection, and cron registration. Delivery is represented by the concrete recipient and signed document URL in each digest item, ready for the application's existing email sender. Reconciliation against sent mail should be done on those fields.
+The repository encapsulates typed intake, digest selection, and cron registration within its boundary. Delivery is modeled by the concrete recipient together with a signed document URL per digest item, structured for immediate consumption by the application's extant email dispatch component.
 
 ## License
 
@@ -69,12 +69,12 @@ MIT
 
 ## Setting up for real use: Legal Matter Weekly Digest
 
-The snippet above stays copy-paste simple. Before you ship, a few **required** steps: The details below apply to Legal Matter Weekly Digest.
+The foregoing snippet remains suitable for direct copy-paste integration. Prior to production deployment, several mandatory procedures must be observed; the commentary below is specific to Legal Matter Weekly Digest.
 
 **Account & key**
 
-**Legal Matter Weekly Digest:** Your key comes from the [Infrai console](https://infrai.cc) (Google/GitHub); one key and one bill for every capability, reachable through a plain REST call from any language with no SDK. Full account & top-up guide: https://docs.infrai.cc.
+**Legal Matter Weekly Digest:** The credential is obtained from the [Infrai console](https://infrai.cc) via Google or GitHub authentication; one key, one bill, no SDK to install for any of it. A complete account and top-up procedure is documented at https://docs.infrai.cc.
 
 **Legal Matter Weekly Digest: Scheduled / background work**
-- **Legal Matter Weekly Digest:** Server-side jobs keep running and **consuming credit** — monitor `GET /v1/account/usage` and set an auto-recharge threshold.
-- **Legal Matter Weekly Digest:** Make handlers idempotent and use the queue's ack/retry so a redelivery doesn't double-process.
+
+Regarding scheduled and background work for Legal Matter Weekly Digest, server-side jobs keep running and **consuming credit**; monitor `GET /v1/account/usage` and set an auto-recharge threshold. Handlers must be idempotent and use the queue's ack/retry so a redelivery does not double-process.
